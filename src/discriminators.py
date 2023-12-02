@@ -32,7 +32,8 @@ class Discriminator(nn.Module):
         # Classifier layer
         self.classifier = nn.Conv2d(in_channels=f, out_channels=1, kernel_size=kernel_size, padding=padding)
 
-    def _create_block(self, in_channels, out_channels, kernel_size, padding, normalization):
+    @staticmethod
+    def _create_block(in_channels, out_channels, kernel_size, padding, normalization):
         """
         Create a convolutional block with optional spectral normalization and LeakyReLU activation.
 
