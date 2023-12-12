@@ -1,0 +1,1 @@
+python src/train.py --input_image balloons.png
