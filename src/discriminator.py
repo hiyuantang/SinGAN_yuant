@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.nn.utils import spectral_norm as SpectralNorm
 
 class Discriminator(nn.Module):
-    def __init__(self, in_channels, max_features, min_features, num_blocks, kernel_size, padding, normalization=True):
+    def __init__(self, in_channels, max_features, min_features, num_blocks, kernel_size, padding, normalization=False):
         """
         Constructs the Discriminator model with flexible configurations.
 
