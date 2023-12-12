@@ -7,6 +7,7 @@ import cv2
 from generator import Generator
 from discriminator import Discriminator
 from utils import *
+import json
 
 def main():
     parser = argparse.ArgumentParser(description='SinGAN Training')
@@ -18,6 +19,38 @@ def main():
                         help='Name of the input image file (e.g., "stone.png").')
     parser.add_argument('--result_path', type=str, default='../results/',
                         help='Path for saving the results.')
+    parser.add_argument('--scale_factor', type=float, default=0.75,
+                        help='The Coefficient that scales the image up.')
+    parser.add_argument('--number_of_noises', type=int, default=12,
+                        help='Number of fixed noise generated for calculating the reconstruction loss.')
+    parser.add_argument('--num_epochs', type=int, default=4000,
+                        help='Number of epochs for training a single scale.')
+    parser.add_argument('--lr_g', type=float, default=0.0005,
+                        help='Learning rate for generators.')
+    parser.add_argument('--lr_d', type=float, default=0.0005,
+                        help='Learning rate for discriminators.')
+    parser.add_argument('--alpha', type=float, default=10.0,
+                        help='Decide how much the reconstruction loss weights.')
+    parser.add_argument('--patch_size', type=int, default=15,
+                        help='Decide the size of patch send to discriminators.')
+    parser.add_argument('--in_channels', type=int, default=3,
+                        help='Number of color channels of the input image.')
+    parser.add_argument('--g_features', type=int, default=128,
+                        help='Number of features for generators.')
+    parser.add_argument('--d_max_features', type=int, default=64,
+                        help='Number of maximum features of discriminators.')
+    parser.add_argument('--d_min_features', type=int, default=32,
+                        help='Number of minimum features of discriminators.')
+    parser.add_argument('--g_num_blocks', type=int, default=8,
+                        help='Number of convolutional blocks of generators.')
+    parser.add_argument('--d_num_blocks', type=int, default=5,
+                        help='Number of convolutional blocks of discriminators.')
+    parser.add_argument('--g_kernel_size', type=int, default=3,
+                        help='Size of kernel of generators.')
+    parser.add_argument('--d_kernel_size', type=int, default=3,
+                        help='Size of kernel of discriminators')
+    parser.add_argument('--normalization', type=bool, default=False,
+                        help='Decide if discriminators will apply normalization.')
 
     args = parser.parse_args()
 
@@ -27,9 +60,6 @@ def main():
     # Create the results directory if it does not exist
     if not os.path.exists(result_path):
         os.makedirs(result_path)
-
-    # Construct full path for input
-    input_full_path = os.path.join(args.input_path, args.input_image)
 
     # Generate a unique hash for the output file
     unique_hash = generate_random_hash()
@@ -45,9 +75,15 @@ def main():
     # Create the full results directory
     os.makedirs(result_full_path)
 
-    train_pyramid(result_full_path, num_scale=5, number_of_noises=100, real_image_path=args.input_path+args.input_image, num_epochs=3000, 
-                lr_g=0.001, lr_d=0.001, alpha=1.0, device=args.device, patch_size=11, in_channels=3, g_features=32, d_max_features=32, 
-                d_min_features=32, g_num_blocks=3, d_num_blocks=3, g_kernel_size=3, d_kernel_size=3, normalization=True)
+    # Save args info
+    with open(os.path.join(result_full_path, 'args.json'), 'w') as file:
+        json.dump(vars(args), file)
+
+    train_pyramid(result_full_path, number_of_noises=args.number_of_noises, real_image_path=args.input_path+args.input_image, 
+                  num_epochs=args.num_epochs, lr_g=args.lr_g, lr_d=args.lr_d, alpha=args.alpha, device=args.device, 
+                  patch_size=args.patch_size, in_channels=args.in_channels, g_features=args.g_features, d_max_features=args.d_max_features, 
+                  d_min_features=args.d_min_features, g_num_blocks=args.g_num_blocks, d_num_blocks=args.d_num_blocks, 
+                  g_kernel_size=args.g_kernel_size, d_kernel_size=args.d_kernel_size, normalization=args.normalization)
     
 def train_single_scale(result_full_path, scale_dir, real_image_scaled, noise_fixed, num_epochs, lr_g, lr_d, 
                        alpha, device, patch_size, scale_index, in_channels, g_features, d_max_features, 
@@ -69,10 +105,12 @@ def train_single_scale(result_full_path, scale_dir, real_image_scaled, noise_fix
     if scale_index > 0:
         rec_fake_reserve = torch.load(os.path.join(result_full_path, f'scale_{scale_index-1}', 'rec_fake_reserve', 'fake_rec.pt'))
         rec_fake_reserve = scale_image(rec_fake_reserve, real_image_scaled.size()[2], real_image_scaled.size()[3])
+    
+    log_file_path = os.path.join(result_full_path, 'log.txt')
 
     for epoch in range(num_epochs):
         # Generate noise and move data to device
-        noise = generate_noise(real_image_scaled, device, repeat=True)
+        noise = generate_noise_single(real_image_scaled, device, repeat=False)
         
         # Create the zero tensor for the generator input at scale 0
         if scale_index == 0:
@@ -88,11 +126,15 @@ def train_single_scale(result_full_path, scale_dir, real_image_scaled, noise_fix
         optimizer_d.zero_grad()
         fake_image_generated = g(noise, fake_image_scaled).detach()
         real_patches = extract_patches(real_image_scaled, patch_size)
+        # repeated_images = real_image_scaled.repeat(2, 1, 1, 1) 
+        # real_patches = extract_patches(repeated_images, patch_size)
+
         fake_patches = extract_patches(fake_image_generated, patch_size)
         d_loss_real = d(real_patches).mean()
         d_loss_fake = d(fake_patches).mean()
-        gradient_penalty = calculate_gradient_penalty(d, real_patches, fake_patches, device)
-        d_loss = d_loss_fake - d_loss_real + gradient_penalty
+        # gradient_penalty = calculate_gradient_penalty(d, real_patches, fake_patches, device)
+        gradient_penalty_ = gradient_penalty(device, real_patches , d, fake_patches)
+        d_loss = d_loss_fake - d_loss_real + 0.001 * gradient_penalty_
         d_loss.backward()
         optimizer_d.step()
 
@@ -120,12 +162,15 @@ def train_single_scale(result_full_path, scale_dir, real_image_scaled, noise_fix
 
         # Logging the training process
         if epoch % 100 == 0 or epoch == num_epochs - 1:
-            print(f"Epoch [{epoch}/{num_epochs}] - D loss: {round(d_loss.item(), 5)} - G loss: {round(g_loss_total.item(), 5)} - Rec loss: {round(g_loss_rec.item(), 5)} - Adv loss: {round(g_loss_adv.item(), 5)}")
+            log_message = f"Epoch [{epoch}/{num_epochs}] - D loss fake: {round(d_loss_fake.item(), 5)} - D loss real: {round(d_loss_real.item(), 5)} - G loss: {round(g_loss_total.item(), 5)} - Rec loss: {round(alpha * g_loss_rec.item(), 5)} - Adv loss: {round(g_loss_adv.item(), 5)}\n"
+            print(log_message[:-2])
+            with open(log_file_path, 'a') as log_file:
+                log_file.write(log_message)
 
     # Return the trained generator and discriminator
     return g, d
     
-def train_pyramid(result_full_path, num_scale, number_of_noises, real_image_path, num_epochs, lr_g, lr_d, alpha, device, 
+def train_pyramid(result_full_path, number_of_noises, real_image_path, num_epochs, lr_g, lr_d, alpha, device, 
                   patch_size, in_channels, g_features, d_max_features, d_min_features, g_num_blocks, 
                   d_num_blocks, g_kernel_size, d_kernel_size, normalization):
     # Prepare real image
@@ -134,12 +179,43 @@ def train_pyramid(result_full_path, num_scale, number_of_noises, real_image_path
     original_height, original_width = real_image.size(2), real_image.size(3)
 
     # Generate list of scales
-    scale_factors = [i / num_scale for i in range(1, num_scale+1)]
-    h_list = [int(original_height * scale) for scale in scale_factors]
-    w_list = [int(original_width * scale) for scale in scale_factors]
+    # Determine the initial scale based on the smaller dimension
+    if original_height < original_width:
+        scale_factor_init = 25 / original_height
+    else:
+        scale_factor_init = 25 / original_width
+
+    # Calculate the initial scaled dimensions
+    initial_h = int(original_height * scale_factor_init)
+    initial_w = int(original_width * scale_factor_init)
+
+    # Initialize the lists with the initial scaled dimensions
+    h_list, w_list = [initial_h], [initial_w]
+
+    # Scale up until exceeding the original dimensions
+    current_h, current_w = initial_h, initial_w
+    while True:
+        next_h = int(current_h / 0.75)
+        next_w = int(current_w / 0.75)
+
+        # Break if the next scale exceeds the original dimensions
+        if next_h > original_height or next_w > original_width:
+            break
+
+        h_list.append(next_h)
+        w_list.append(next_w)
+        current_h, current_w = next_h, next_w
+
+    # Add the original dimensions as the last scale
+    h_list.append(original_height)
+    w_list.append(original_width)
+
+    # Number of scales
+    num_scale = len(h_list)
+    print(f'The training will have {num_scale} scales')
 
     # Fixed noise for reconstruction loss
-    noise_fixed = generate_fixed_noise(3, h_list[0], w_list[0], device, number_of_noises=number_of_noises, repeat=True, seed=42)
+    noise_fixed = generate_fixed_noise(3, h_list[0], w_list[0], device, number_of_noises=number_of_noises, repeat=False, seed=42)
 
     # Training loop for each scale
     for i in range(num_scale):
@@ -176,7 +252,7 @@ def train_pyramid(result_full_path, num_scale, number_of_noises, real_image_path
         # Generate and save fake images outputs
         num_images = ceil(num_epochs / 100)
         for j in range(num_images):
-            noise = generate_noise(real_image_scaled, device, repeat=True)
+            noise = generate_noise_single(real_image_scaled, device, repeat=False)
             fake_image = g(noise, torch.zeros_like(real_image_scaled)).detach()
             save_image(fake_image, os.path.join(output_dir, f'fake_image_{j}.png'))
     
