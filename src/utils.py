@@ -13,29 +13,23 @@ import torchvision
 import random
 from PIL import Image
 
-def generate_noise(tensor_like, device, repeat=False):
-    """
-    Generates random noise tensor with the same size as the given tensor or with repeated values across channels.
-
-    This method creates a tensor of random noise that either matches the size of the input tensor (`tensor_like`)
-    or has the noise repeated across its channels if `repeat` is True. The generated noise tensor is then transferred 
-    to the specified device (CPU or GPU).
-
-    Parameters:
-    tensor_like (torch.Tensor): A PyTorch tensor whose size is used as a reference for generating the noise tensor.
-    device (torch.device): The device (CPU or GPU) to which the noise tensor will be transferred.
-    repeat (bool, optional): If True, the noise is generated for one channel and then repeated across all channels.
-                            Defaults to False, where the noise is independently generated for each channel.
-
-    Returns:
-    torch.Tensor: A tensor of random noise, either matching the size of `tensor_like` or with repeated values across 
-                its channels, transferred to the specified device.
-    """
+def generate_noise_single(tensor_like, device, repeat=False):
     if not repeat:
         noise = torch.randn(tensor_like.size())
     else:
         noise = torch.randn((tensor_like.size(0), 1, tensor_like.size(2), tensor_like.size(3)))
         noise = noise.repeat((1, 3, 1, 1))
+    return noise.to(device)
+
+def generate_noise(tensor_like, device, number_of_noises, repeat=False):
+    c, h, w = tensor_like.size(1), tensor_like.size(2), tensor_like.size(3)
+    
+    if not repeat:
+        noise = torch.randn((number_of_noises, c, h, w))
+    else:
+        single_channel_noise = torch.randn((number_of_noises, 1, h, w))
+        noise = single_channel_noise.repeat(1, c, 1, 1)
+    
     return noise.to(device)
 
 def generate_fixed_noise(channels, height, width, device, number_of_noises=1, repeat=False, seed=42):
@@ -88,29 +82,34 @@ def generate_random_hash(length=5):
     """
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
-def extract_patches(image, patch_size):
-    if not isinstance(image, torch.Tensor) or image.ndim != 4:
-        raise ValueError("Input image must be a 4D PyTorch tensor")
+def extract_patches(images, patch_size, stride=6):
+    if not isinstance(images, torch.Tensor) or images.ndim != 4:
+        raise ValueError("Input images must be a 4D PyTorch tensor")
 
-    _, channels, height, width = image.shape
+    num_images, channels, height, width = images.shape
 
     if patch_size > height or patch_size > width:
         raise ValueError("Patch size cannot be larger than image dimensions")
     
-    patches = []
-    for i in range(0, height - patch_size + 1, patch_size):
-        for j in range(0, width - patch_size + 1, patch_size):
-            # Extract the patch using all dimensions
-            patch = image[:, :, i:i + patch_size, j:j + patch_size]
-            patches.append(patch)
+    all_patches = []
+    for n in range(num_images):
+        patches = []
+        for i in range(0, height - patch_size + 1, stride):
+            for j in range(0, width - patch_size + 1, stride):
+                # Extract the patch for the current image
+                patch = images[n:n+1, :, i:i + patch_size, j:j + patch_size]
+                patches.append(patch)
+        
+        # Convert list of patches for the current image into a 4D tensor
+        patches = torch.cat(patches, dim=0)
+        all_patches.append(patches)
 
-    # Convert list of patches into a 4D tensor
-    patches = torch.stack(patches, dim=0)
-    # Reshape to (N, channels, patch_size, patch_size)
-    N = len(patches)
-    patches = patches.view(N, channels, patch_size, patch_size)
+    # Combine all patches from all images into a single tensor
+    all_patches = torch.cat(all_patches, dim=0)
     
-    return patches
+    return all_patches
+
+
 
 def calculate_gradient_penalty(discriminator, real_images, fake_images, device, lambda_gp=10):
     # Random weight term for interpolation between real and fake samples
@@ -129,6 +128,27 @@ def calculate_gradient_penalty(discriminator, real_images, fake_images, device, 
     gradients = gradients.view(gradients.size(0), -1)
     gradient_penalty = lambda_gp * ((gradients.norm(2, dim=1) - 1) ** 2).mean()
     return gradient_penalty
+
+from torch.autograd import grad as torch_grad, Variable
+def gradient_penalty(device, real_data, d, generated_data):
+        # calculate interpolation
+        alpha = torch.rand(real_data.size(0), 1, 1, 1)
+        alpha = alpha.expand_as(real_data)
+        alpha = alpha.to(device)
+        interpolated = alpha * real_data + (1 - alpha) * generated_data
+        interpolated = Variable(interpolated, requires_grad=True)
+        interpolated = interpolated.to(device)
+
+        # calculate probability of interpolated examples
+        prob_interpolated = d(interpolated)
+
+        # calculate gradients of probabilities with respect to examples
+        gradients = torch_grad(outputs=prob_interpolated, inputs=interpolated,
+                               grad_outputs=torch.ones(prob_interpolated.size()).to(device),
+                               create_graph=True, retain_graph=True, only_inputs=True)[0]
+
+        # return gradient penalty
+        return ((gradients.norm(2, dim=1) - 1) ** 2).mean()
 
 def save_model(model, path):
     """Save the model to the specified path."""
