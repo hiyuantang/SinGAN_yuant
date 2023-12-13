@@ -82,7 +82,7 @@ def generate_random_hash(length=5):
     """
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
-def extract_patches(images, patch_size, stride=6):
+def extract_patches(images, patch_size, stride=3):
     if not isinstance(images, torch.Tensor) or images.ndim != 4:
         raise ValueError("Input images must be a 4D PyTorch tensor")
 
@@ -108,8 +108,6 @@ def extract_patches(images, patch_size, stride=6):
     all_patches = torch.cat(all_patches, dim=0)
     
     return all_patches
-
-
 
 def calculate_gradient_penalty(discriminator, real_images, fake_images, device, lambda_gp=10):
     # Random weight term for interpolation between real and fake samples
