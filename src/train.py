@@ -21,7 +21,7 @@ def main():
                         help='Path for saving the results.')
     parser.add_argument('--scale_factor', type=float, default=0.75,
                         help='The Coefficient that scales the image up.')
-    parser.add_argument('--number_of_noises', type=int, default=12,
+    parser.add_argument('--number_of_noises', type=int, default=32,
                         help='Number of fixed noise generated for calculating the reconstruction loss.')
     parser.add_argument('--num_epochs', type=int, default=4000,
                         help='Number of epochs for training a single scale.')
@@ -31,13 +31,13 @@ def main():
                         help='Learning rate for discriminators.')
     parser.add_argument('--alpha', type=float, default=10.0,
                         help='Decide how much the reconstruction loss weights.')
-    parser.add_argument('--patch_size', type=int, default=15,
+    parser.add_argument('--patch_size', type=int, default=25,
                         help='Decide the size of patch send to discriminators.')
     parser.add_argument('--in_channels', type=int, default=3,
                         help='Number of color channels of the input image.')
     parser.add_argument('--g_features', type=int, default=128,
                         help='Number of features for generators.')
-    parser.add_argument('--d_max_features', type=int, default=64,
+    parser.add_argument('--d_max_features', type=int, default=256,
                         help='Number of maximum features of discriminators.')
     parser.add_argument('--d_min_features', type=int, default=32,
                         help='Number of minimum features of discriminators.')
@@ -125,15 +125,15 @@ def train_single_scale(result_full_path, scale_dir, real_image_scaled, noise_fix
         # Discriminator training
         optimizer_d.zero_grad()
         fake_image_generated = g(noise, fake_image_scaled).detach()
-        real_patches = extract_patches(real_image_scaled, patch_size)
+        # real_patches = extract_patches(real_image_scaled, patch_size)
         # repeated_images = real_image_scaled.repeat(2, 1, 1, 1) 
         # real_patches = extract_patches(repeated_images, patch_size)
 
-        fake_patches = extract_patches(fake_image_generated, patch_size)
-        d_loss_real = d(real_patches).mean()
-        d_loss_fake = d(fake_patches).mean()
+        # fake_patches = extract_patches(fake_image_generated, patch_size)
+        d_loss_real = d(real_image_scaled).mean()
+        d_loss_fake = d(fake_image_generated).mean()
         # gradient_penalty = calculate_gradient_penalty(d, real_patches, fake_patches, device)
-        gradient_penalty_ = gradient_penalty(device, real_patches , d, fake_patches)
+        gradient_penalty_ = gradient_penalty(device, real_image_scaled, d, fake_image_generated)
         d_loss = d_loss_fake - d_loss_real + 0.001 * gradient_penalty_
         d_loss.backward()
         optimizer_d.step()
@@ -142,8 +142,8 @@ def train_single_scale(result_full_path, scale_dir, real_image_scaled, noise_fix
         optimizer_g.zero_grad()
         # Adversarial loss
         fake_image_generated = g(noise, fake_image_scaled)
-        fake_patches = extract_patches(fake_image_generated, patch_size)
-        g_loss_fake_adv = d(fake_patches).mean()
+        # fake_patches = extract_patches(fake_image_generated, patch_size)
+        g_loss_fake_adv = d(fake_image_generated).mean()
         g_loss_adv = -g_loss_fake_adv
         # Reconstruction loss
         if scale_index > 0:  
