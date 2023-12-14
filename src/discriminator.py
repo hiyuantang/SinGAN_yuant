@@ -4,18 +4,6 @@ from torch.nn.utils import spectral_norm as SpectralNorm
 
 class Discriminator(nn.Module):
     def __init__(self, in_channels, max_features, min_features, num_blocks, kernel_size, padding, normalization=False):
-        """
-        Constructs the Discriminator model with flexible configurations.
-
-        Parameters:
-        in_channels (int): Number of input channels.
-        max_features (int): Maximum number of features for convolutional layers.
-        min_features (int): Minimum number of features for convolutional layers.
-        num_blocks (int): Number of blocks in the model.
-        kernel_size (int): Kernel size for convolutional layers.
-        padding (int): Padding for convolutional layers.
-        normalization (bool): Flag to apply spectral normalization.
-        """
         super().__init__()
 
         if not (kernel_size % 2 == 1 and kernel_size >= 3):
@@ -39,19 +27,6 @@ class Discriminator(nn.Module):
 
     @staticmethod
     def create_block(in_channels, out_channels, kernel_size, padding, normalization):
-        """
-        Create a convolutional block with optional spectral normalization and LeakyReLU activation.
-
-        Parameters:
-        in_channels (int): Number of input channels for the block.
-        out_channels (int): Number of output channels for the block.
-        kernel_size (int): Kernel size for the convolutional layer.
-        padding (int): Padding for the convolutional layer.
-        normalization (bool): Apply spectral normalization if True.
-
-        Returns:
-        nn.Sequential: The constructed convolutional block.
-        """
         padding = kernel_size // 2
         if normalization:
             layers = [SpectralNorm(nn.Conv2d(in_channels, out_channels, kernel_size, padding=padding))]
@@ -63,26 +38,11 @@ class Discriminator(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        """
-        Forward pass of the Discriminator.
-
-        Parameters:
-        x (Tensor): The input tensor to the model.
-
-        Returns:
-        Tensor: The output tensor after processing by the model.
-        """
         x = self.features(x)
         x = self.classifier(x)
         return x
 
     def get_config(self):
-        """
-        Retrieves the configuration of the Discriminator.
-
-        Returns:
-        str: A string representation of the model's configuration.
-        """
         config_str = 'Discriminator Configuration:\n'
         for i, layer in enumerate(self.features):
             config_str += f'Feature Block {i}: {layer}\n'
