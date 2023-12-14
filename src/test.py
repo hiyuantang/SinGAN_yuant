@@ -7,7 +7,7 @@ import os
 from utils import *
 
 # Path to the JSON file containing the arguments
-result_full_path = '../results/balloons_downsampled_gixpq'
+result_full_path = '../results/balloons_downsampled_1'
 
 # Read and deserialize args from the file
 with open(result_full_path+'/args.json', 'r') as file:
@@ -52,10 +52,13 @@ test_results_path = os.path.join(current_dir, test_results_dir)
 if not os.path.exists(test_results_path):
     os.makedirs(test_results_path)
 
-editing_0 = prepare_image(os.path.join(args.input_path, 'edit_3.png'))
-editing_0_scale_0 = (-scale_image(editing_0, 25, 33)).to(args.device)
+editing_0 = prepare_image(os.path.join(args.input_path, 'edit_0.png'))
+editing_0_scale_0 = (scale_image(editing_0, 25, 33)).to(args.device)
+
+# test_noise = generate_fixed_noise(3, 44, 59, 'cpu', number_of_noises=1, repeat=False, seed=42)
+# save_image(test_noise, os.path.join(test_results_path, 'noise_2.png'))
 
 real_image = prepare_image(args.input_path+args.input_image)
 real_image = real_image.to(args.device)
 real_image = scale_image(real_image, 25, 33)
-save_image(models['scale_0'][0](editing_0_scale_0, real_image), os.path.join(test_results_path, 'edit_3.png'))
+save_image(models['scale_0'][0](editing_0_scale_0, real_image), os.path.join(test_results_path, 'edit_0.png'))
