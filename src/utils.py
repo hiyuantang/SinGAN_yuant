@@ -127,6 +127,7 @@ def calculate_gradient_penalty(discriminator, real_images, fake_images, device, 
     gradient_penalty = lambda_gp * ((gradients.norm(2, dim=1) - 1) ** 2).mean()
     return gradient_penalty
 
+# Borrowed from old paper
 from torch.autograd import grad as torch_grad, Variable
 def gradient_penalty(device, real_data, d, generated_data):
         # calculate interpolation
@@ -149,19 +150,13 @@ def gradient_penalty(device, real_data, d, generated_data):
         return ((gradients.norm(2, dim=1) - 1) ** 2).mean()
 
 def save_model(model, path):
-    """Save the model to the specified path."""
     torch.save(model.state_dict(), path)
 
 def save_image(image, path):
-    """Save the image to the specified path."""
-    # Convert the image tensor to a suitable format for saving
-    # This conversion depends on how your images are represented
-    # For example, if the image is in the range [0, 1], you might want to convert it to [0, 255]
     torchvision.utils.save_image(image, path)
 
 def load_and_scale_image(image_path, target_size):
-    """Load and scale an image to the target size."""
-    image = Image.open(image_path).convert('RGB')  # Assuming RGB images, modify if different
+    image = Image.open(image_path).convert('RGB')  
     transform = transforms.Compose([
         transforms.Resize(target_size),
         transforms.ToTensor()
