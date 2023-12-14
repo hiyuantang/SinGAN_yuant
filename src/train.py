@@ -3,7 +3,6 @@ from math import ceil
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import cv2
 from generator import Generator
 from discriminator import Discriminator
 from utils import *
@@ -23,7 +22,7 @@ def main():
                         help='The Coefficient that scales the image up.')
     parser.add_argument('--number_of_noises', type=int, default=32,
                         help='Number of fixed noise generated for calculating the reconstruction loss.')
-    parser.add_argument('--num_epochs', type=int, default=4000,
+    parser.add_argument('--num_epochs', type=int, default=2000,
                         help='Number of epochs for training a single scale.')
     parser.add_argument('--lr_g', type=float, default=0.0005,
                         help='Learning rate for generators.')
@@ -31,7 +30,7 @@ def main():
                         help='Learning rate for discriminators.')
     parser.add_argument('--alpha', type=float, default=10.0,
                         help='Decide how much the reconstruction loss weights.')
-    parser.add_argument('--patch_size', type=int, default=25,
+    parser.add_argument('--patch_size', type=int, default=11,
                         help='Decide the size of patch send to discriminators.')
     parser.add_argument('--in_channels', type=int, default=3,
                         help='Number of color channels of the input image.')
@@ -83,7 +82,7 @@ def main():
                   num_epochs=args.num_epochs, lr_g=args.lr_g, lr_d=args.lr_d, alpha=args.alpha, device=args.device, 
                   patch_size=args.patch_size, in_channels=args.in_channels, g_features=args.g_features, d_max_features=args.d_max_features, 
                   d_min_features=args.d_min_features, g_num_blocks=args.g_num_blocks, d_num_blocks=args.d_num_blocks, 
-                  g_kernel_size=args.g_kernel_size, d_kernel_size=args.d_kernel_size, normalization=args.normalization)
+                  g_kernel_size=args.g_kernel_size, d_kernel_size=args.d_kernel_size, normalization=args.normalization, scale_factor = args.scale_factor)
     
 def train_single_scale(result_full_path, scale_dir, real_image_scaled, noise_fixed, num_epochs, lr_g, lr_d, 
                        alpha, device, patch_size, scale_index, in_channels, g_features, d_max_features, 
@@ -172,7 +171,7 @@ def train_single_scale(result_full_path, scale_dir, real_image_scaled, noise_fix
     
 def train_pyramid(result_full_path, number_of_noises, real_image_path, num_epochs, lr_g, lr_d, alpha, device, 
                   patch_size, in_channels, g_features, d_max_features, d_min_features, g_num_blocks, 
-                  d_num_blocks, g_kernel_size, d_kernel_size, normalization):
+                  d_num_blocks, g_kernel_size, d_kernel_size, normalization, scale_factor):
     # Prepare real image
     real_image = prepare_image(real_image_path)
     real_image = real_image.to(device)
@@ -195,8 +194,8 @@ def train_pyramid(result_full_path, number_of_noises, real_image_path, num_epoch
     # Scale up until exceeding the original dimensions
     current_h, current_w = initial_h, initial_w
     while True:
-        next_h = int(current_h / 0.75)
-        next_w = int(current_w / 0.75)
+        next_h = int(current_h / scale_factor)
+        next_w = int(current_w / scale_factor)
 
         # Break if the next scale exceeds the original dimensions
         if next_h > original_height or next_w > original_width:
