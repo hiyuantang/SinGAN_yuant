@@ -31,12 +31,6 @@ class Generator(nn.Module):
         return torch.sigmoid(combined_input + x)
     
     def get_config(self):
-        """
-        Retrieves the configuration of the Generator.
-
-        Returns:
-        str: A string representation of the model's configuration.
-        """
         config_str = 'Generator Configuration:\n'
         for i, layer in enumerate(self.features):
             config_str += f'Feature Block {i}: {layer}\n'
