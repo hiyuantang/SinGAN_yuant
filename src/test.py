@@ -6,14 +6,15 @@ import torch
 import os
 from utils import *
 
-# Path to the JSON file containing the arguments
-result_full_path = '../results/balloons_downsampled_1'
+# Use this .py file for paint-to-image application after you have trained at least one model
+# Modify 3 necessary parts to make this script work
 
-# Read and deserialize args from the file
+# Path to the JSON file containing the arguments
+result_full_path = '../results/balloons_downsampled_1' # Part 1: define your model path
+
 with open(result_full_path+'/args.json', 'r') as file:
     args_dict = json.load(file)
 
-# Convert to argparse.Namespace if needed
 args = argparse.Namespace(**args_dict)
 
 
@@ -42,7 +43,7 @@ def load_models_for_scale(scale_path, args):
     return g, d
 
 models = {}
-for i in range(5): # Assuming 5 scales from scale_0 to scale_4
+for i in range(5): 
     scale_dir = os.path.join(result_full_path, f'scale_{i}')
     models[f'scale_{i}'] = load_models_for_scale(scale_dir, args)
 
@@ -52,7 +53,9 @@ test_results_path = os.path.join(current_dir, test_results_dir)
 if not os.path.exists(test_results_path):
     os.makedirs(test_results_path)
 
-editing_0 = prepare_image(os.path.join(args.input_path, 'edit_0.png'))
+editing_0 = prepare_image(os.path.join(args.input_path, 'edit_0.png')) # Part 2: define paint input name. 
+                                                                        # You can find available inputs by browsing data/images/
+                                                                        # Paint input names start with 'edit'
 editing_0_scale_0 = (scale_image(editing_0, 25, 33)).to(args.device)
 
 # test_noise = generate_fixed_noise(3, 44, 59, 'cpu', number_of_noises=1, repeat=False, seed=42)
@@ -61,4 +64,6 @@ editing_0_scale_0 = (scale_image(editing_0, 25, 33)).to(args.device)
 real_image = prepare_image(args.input_path+args.input_image)
 real_image = real_image.to(args.device)
 real_image = scale_image(real_image, 25, 33)
-save_image(models['scale_0'][0](editing_0_scale_0, real_image), os.path.join(test_results_path, 'edit_0.png'))
+save_image(models['scale_0'][0](editing_0_scale_0, real_image), os.path.join(test_results_path, 'result_0.png')) # Part 3: define output image name.
+                                                                                                                # Better to be different each time of running
+                                                                                                                # Results will be recorded at src/test_results/
