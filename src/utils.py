@@ -33,7 +33,7 @@ def generate_noise(tensor_like, device, number_of_noises, repeat=False):
     return noise.to(device)
 
 def generate_fixed_noise(channels, height, width, device, number_of_noises=1, repeat=False, seed=42):
-    # Set the random seed for reproducibility
+    # Set the random seed
     torch.manual_seed(seed)
 
     # Generate the fixed noise
@@ -44,7 +44,6 @@ def generate_fixed_noise(channels, height, width, device, number_of_noises=1, re
         noise = torch.randn((number_of_noises, 1, height, width), device=device).repeat((1, channels, 1, 1))
 
     return noise
-
 
 
 def prepare_image(image_path):
@@ -77,9 +76,6 @@ def device_option():
     return default_device
 
 def generate_random_hash(length=5):
-    """
-    Generate a random hash of the specified length.
-    """
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 def extract_patches(images, patch_size, stride=3):
