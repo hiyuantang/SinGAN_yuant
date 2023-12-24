@@ -13,8 +13,6 @@ This project reimplemented SinGAN in Python 3.11 and Torch 2.1. The hyperparamet
 
 ## Installation
 
-Give detailed instructions on how to install and set up your project. Include any prerequisites or dependencies.
-
 ```bash
 # git command
 git clone https://github.com/hiyuantang/SinGAN_yuant.git
