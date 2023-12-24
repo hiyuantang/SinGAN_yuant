@@ -1,6 +1,6 @@
-# SinGAN Re-implementation
+# SinGAN with Python 3.11 & Torch 2.1
 
-Provide a brief description of what your project does and its main features.
+This project reimplemented SinGAN in Python 3.11 and Torch 2.1. The hyperparameters have not been carefully tuned, and the results will not be comparable to the original paper. However, it serves as a starting point for running SinGAN on a modern machine.
 
 ## Table of Contents
 - [Installation](#installation)
