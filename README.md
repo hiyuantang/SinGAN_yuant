@@ -16,10 +16,8 @@ This project reimplemented SinGAN in Python 3.11 and Torch 2.1. The hyperparamet
 Give detailed instructions on how to install and set up your project. Include any prerequisites or dependencies.
 
 ```bash
-# Example command
-git clone <repository-url>
-cd <repository-name>
-# additional installation commands
+# git command
+git clone https://github.com/hiyuantang/SinGAN_yuant.git
 ```
 
 ## Training Models
@@ -49,15 +47,8 @@ After training at least one model, you can use the paint-to-image application. M
 
 ## System Requirements
 
-- GPU: RTX 4080 or equivalent
-- Additional hardware/software requirements
-
-List any specific hardware or software requirements needed to run your project.
-
-## Contributing
-
-If you're open to contributions, provide instructions on how users can contribute to your project. Include guidelines for code contributions, bug reports, and feature requests.
+- CUDA, MPS, or CPU
 
 ## License
 
-Specify the license under which your project is released.
+MIT License
