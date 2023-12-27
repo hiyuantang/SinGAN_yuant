@@ -1,6 +1,8 @@
 # SinGAN with Python 3.11 & Torch 2.1
 
-This project reimplemented SinGAN in Python 3.11 and Torch 2.1. The hyperparameters have not been carefully tuned, and the results will not be comparable to the original paper. However, it serves as a starting point for running SinGAN on a modern machine.
+This project reimplemented SinGAN in Python 3.11 and Torch 2.1. The hyperparameters have not been carefully tuned, and the results will not be comparable to the original paper. However, it serves as a starting point for running SinGAN on a modern machine. 
+
+For the original SinGAN implementation, visit [SinGAN Official Repository](https://github.com/tamarott/SinGAN).
 
 ## Table of Contents
 - [Installation](#installation)
