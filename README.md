@@ -18,6 +18,9 @@ For the original SinGAN implementation, visit [SinGAN Official Repository](https
 ```bash
 # git command
 git clone https://github.com/hiyuantang/SinGAN_yuant.git
+
+# Install dependencies from requirements.txt
+pip install -r requirements.txt
 ```
 
 ## Training Models
