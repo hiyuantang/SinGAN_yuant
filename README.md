@@ -49,4 +49,4 @@ After training at least one model, you can use the paint-to-image application. M
 
 ## License
 
-MIT License
+[MIT License](https://github.com/hiyuantang/SinGAN_yuant/blob/main/LICENSE)
