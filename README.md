@@ -31,7 +31,7 @@ cd src
 bash run_train.sh
 ```
 
-This script will train 10 models as described in the paper, and is expected to take approximately 3 hours on an RTX 4080 GPU.
+This script will train 10 models as described in the paper and is expected to take approximately 3 hours on an AD104 GPU (such as the RTX 4080 Laptop or RTX 4070 Ti Desktop).
 
 ### Manual Training
 
