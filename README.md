@@ -50,8 +50,6 @@ After training at least one model, you can use the paint-to-image application. M
 
 ## System Requirements
 
-- CUDA, MPS, or CPU
-
-## License
-
-[MIT License](https://github.com/hiyuantang/SinGAN_yuant/blob/main/LICENSE)
+- **CUDA** 
+- **MPS**
+- **CPU**
