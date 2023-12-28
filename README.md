@@ -47,9 +47,3 @@ After training at least one model, you can use the paint-to-image application. M
 ## Visualization and Logs
 
 `vis.ipynb` contains classes and methods for extracting and visualizing information from training logs. You can use Jupyter Notebook to open and run this file for insights into the training process.
-
-## System Requirements
-
-- **CUDA** 
-- **MPS**
-- **CPU**
